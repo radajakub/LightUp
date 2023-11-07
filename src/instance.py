@@ -30,7 +30,10 @@ class Instance:
         print('\n')
 
     def __init__(self, name: str) -> None:
-        self._load_from_file(name)
+        if name == '':
+            self._load_from_stdin()
+        else:
+            self._load_from_file(name)
         self._build()
         self.reset()
 
@@ -45,6 +48,9 @@ class Instance:
 
     def print_map(self) -> None:
         Instance.show(self.map)
+
+    def _load_from_stdin(self) -> None:
+        self.input = input()
 
     def _load_from_file(self, name: str) -> None:
         with open(os.path.join(DATA_PATH, f'{name}.txt'), 'r') as f:
@@ -90,16 +96,22 @@ class Instance:
     def reset(self) -> None:
         self.map = self.orig_map.copy()
 
-    def place_bulb(self, bulb: tuple[int, int]) -> None:
+    def place_bulb(self, bulb: tuple[int, int], show_rays: bool = False) -> None:
         self._place_char(bulb, BULB)
-        for illuminated in self.get_illuminated(bulb):
-            if not self._is_bulb(illuminated):
-                self._place_char(illuminated, ILLUMINATED)
+        if show_rays:
+            for illuminated in self.get_illuminated(bulb):
+                if not self._is_bulb(illuminated):
+                    self._place_char(illuminated, ILLUMINATED)
+
+    def get_num(self, pos: tuple[int, int]) -> int:
+        if self._is_number(pos):
+            return int(self.map[pos[0], pos[1]])
+        else:
+            raise Exception(f'Position {pos} is not a number')
 
     def get_neighborhood(self, bulb: tuple[int, int]) -> list[tuple[int, int]]:
-        # y, x = bulb
         return [pos for pos in [_add_pos(bulb, d) for d in DIFFS]
-                if self._is_empty(pos)]
+                if self._is_in_range(pos) and self._is_empty(pos)]
 
     def get_empty(self) -> list[tuple[int, int]]:
         return self._get_positions(self._is_empty)
@@ -113,3 +125,9 @@ class Instance:
 
     def to_string(self) -> str:
         return ''.join(self.map[::-1].flatten())
+
+    def verify(self) -> None:
+        if self.to_string() == self.output:
+            print('OK')
+        else:
+            print('WRONG')
